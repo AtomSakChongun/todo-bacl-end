@@ -141,7 +141,6 @@ const taskController = {
                 status_id
             } = req.body;
 
-            // 🔥 check task ว่ามีจริง และเป็นของ user นี้
             const [existing] = await db.query(
                 `SELECT id FROM task WHERE id = ? AND user_id = ? AND is_active = 1`,
                 [taskId, userId]
@@ -176,7 +175,6 @@ const taskController = {
                 return this.error(res, "ไม่มีข้อมูลให้อัปเดต", 400);
             }
 
-            // 🔥 update
             await db.query(
                 `UPDATE task 
              SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP
@@ -194,6 +192,39 @@ const taskController = {
                 err.message === "Unauthorized" ? 401 : 500
             );
         }
+    },
+
+    async deleteTaskByUser(req, res) {
+        try {
+            const userId = this.getUserId(req);
+            const { id: taskId } = req.params;
+
+            const [existing] = await db.query(
+                `SELECT id FROM task WHERE id = ? AND user_id = ? AND is_active = 1`,
+                [taskId, userId]
+            );
+
+            if (existing.length === 0) {
+                return this.error(res, "Task not found", 404);
+            }
+
+            await db.query(
+                `UPDATE task 
+             SET is_active = 0 , updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND user_id = ?`,
+             [taskId, userId]
+            );
+
+            return this.success(res, null, "Delete task success");
+
+        } catch (err) {
+            console.error(err);
+            return this.error(
+                res,
+                err.message === "Unauthorized" ? err.message : undefined,
+                err.message === "Unauthorized" ? 401 : 500
+            );
+        }
     }
 
 };
@@ -202,5 +233,6 @@ module.exports = {
     getAllTaskByUserId: taskController.getAllTaskByUserId.bind(taskController),
     createTaskByUser: taskController.createTaskByUser.bind(taskController),
     getTaskByTaskId: taskController.getTaskByTaskId.bind(taskController),
-    updateTaskByUser: taskController.updateTaskByUser.bind(taskController)
+    updateTaskByUser: taskController.updateTaskByUser.bind(taskController),
+    deleteTaskByUser : taskController.deleteTaskByUser.bind(taskController)
 };
