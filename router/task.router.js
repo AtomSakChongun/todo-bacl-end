@@ -5,6 +5,8 @@ const { verifyToken } = require('../middleware/middleware');
 const taskController = require('../controllers/task.controller')
 
 router.get('/user', verifyToken, taskController.getAllTaskByUserId);
-router.post('/create',verifyToken,taskController.createTaskByUser)
+router.get('/:id', verifyToken, taskController.getTaskByTaskId);
+router.post('/create',verifyToken,taskController.createTaskByUser);
+router.post('/update',verifyToken,taskController.updateTaskByUser);
 
 module.exports = router;
